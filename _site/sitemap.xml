@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!--  Homepage -->
+  <url>
+    <loc>http://blog.example.com/</loc>
+    <lastmod>2012-08-04</lastmod>
+    <changefreq>daily</changefreq>
+		<priority>1.0</priority>
+  </url>
+
+  
+  <url>
+    <loc>http://blog.example.com/2010/11/10/second-post.html</loc>
+    
+    <lastmod>2010-11-10</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://blog.example.com/2010/11/01/first-post.html</loc>
+    
+    <lastmod>2010-10-07</lastmod>
+    
+  </url>
+  
+
+  
+  <url>
+    <loc>http://blog.example.com/about.html</loc>
+    
+    <lastmod>2012-08-04</lastmod>
+    
+    
+    
+  </url>
+  
+  <url>
+    <loc>http://blog.example.com/index.html</loc>
+    
+    <lastmod>2012-08-04</lastmod>
+    
+    
+    
+  </url>
+  
+
+</urlset>
