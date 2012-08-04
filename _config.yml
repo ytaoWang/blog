@@ -4,6 +4,7 @@ permalink: date
 pygments: true
 exclude: ['Rakefile', 'README.md', 'config.rb']
 markdown: rdiscount
+url:http://ytaowang.github/blog
 
 # configuration required for some pages
 
