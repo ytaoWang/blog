@@ -75,8 +75,8 @@
 	
 每个文件的背后管理都是内核态由具体文件系统来实现，而在用户态则体现为路径管理，这里的*struct path*就是这样的桥梁作用.这样来讲具体的文件系统的调用关系图如下:
 
-                         -------> file ----> vfsmnt --> super_block
-	file_struct ---->fdtable           ----> dentry --> inode
+                         -------> file ---->  path    ----> vfsmount --> super_block
+	file_struct ---->fdtable                          ----> dentry --> inode
 		                 -------> file 
 						 
 						 -------> file
