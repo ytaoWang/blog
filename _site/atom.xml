@@ -1,16 +1,1030 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
- <title>My Blog Title</title>
+ <title>Just a blog</title>
  <link href="http://blog.example.com/atom.xml" rel="self"/>
  <link href="http://blog.example.com/"/>
- <updated>2012-08-04T14:54:27+08:00</updated>
+ <updated>2012-11-18T00:12:28+08:00</updated>
  <id>http://blog.example.com/</id>
  <author>
-   <name>Me</name>
-   <email>me@example.com</email>
+   <name>wyt</name>
+   <email>yt0907.Wang@gmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>sprintf 的小问题</title>
+   <link href="http://blog.example.com/2012/08/23/char.html"/>
+   <updated>2012-08-23T00:00:00+08:00</updated>
+   <id>http://blog.example.com/2012/08/23/char</id>
+   <content type="html">&lt;p&gt;最近需要将数组转换为字符串,就想到了库函数snprintf,sprintf,在使用sprintf的时候出现了一个奇怪的问题,程序如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#include &amp;lt;stdio.h&amp;gt;
+#include &amp;lt;string.h&amp;gt;
+
+#define N 5
+
+int main(int argc,char *argv[])
+{
+   int i = 0;//i = 2;
+   int a[N] = {0,1,2,3,4};
+   char str[N];
+
+   //memset(str,'\0',N+1);
+
+   for(; i &amp;lt; N; ++ i)
+   {
+       sprintf(str + i,&quot;%d&quot;,a[i]);
+       printf(&quot;%d,%c,%d\n&quot;,a[i],str[i],i);
+    }
+
+  puts(str);
+
+  return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;snprintf会在末尾加上一个'\0',来标记字符串的结束，编译运行程序，得到的是一个死循环，通过gdb调试查看其汇编代码,发现一些异常.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;gdb ./tas
+
+set disassembly-flavor intel
+
+disassemble main
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;在数据初始化部分的代码片断如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt; 0x0804848e &amp;lt;+10&amp;gt;:  mov    DWORD PTR [esp+0x2c],0x0
+ 0x08048496 &amp;lt;+18&amp;gt;:  mov    DWORD PTR [esp+0x10],0x0
+ 0x0804849e &amp;lt;+26&amp;gt;:  mov    DWORD PTR [esp+0x14],0x1
+ 0x080484a6 &amp;lt;+34&amp;gt;:  mov    DWORD PTR [esp+0x18],0x2
+ 0x080484ae &amp;lt;+42&amp;gt;:  mov    DWORD PTR [esp+0x1c],0x3
+ 0x080484b6 &amp;lt;+50&amp;gt;:  mov    DWORD PTR [esp+0x20],0x4
+ 0x080484be &amp;lt;+58&amp;gt;:  jmp    0x8048522 &amp;lt;main+158&amp;gt;
+ 0x080484c0 &amp;lt;+60&amp;gt;:  mov    eax,DWORD PTR [esp+0x2c]
+ 0x080484c4 &amp;lt;+64&amp;gt;:  mov    ecx,DWORD PTR [esp+eax*4+0x10]
+ 0x080484c8 &amp;lt;+68&amp;gt;:  mov    edx,0x8048610
+ 0x080484cd &amp;lt;+73&amp;gt;:  mov    ebx,DWORD PTR [esp+0x2c]
+ 0x080484d1 &amp;lt;+77&amp;gt;:  lea    eax,[esp+0x27]
+ 0x080484d5 &amp;lt;+81&amp;gt;:  add    eax,ebx
+ 0x080484d7 &amp;lt;+83&amp;gt;:  mov    DWORD PTR [esp+0x8],ecx
+ 0x080484db &amp;lt;+87&amp;gt;:  mov    DWORD PTR [esp+0x4],edx
+ 0x080484df &amp;lt;+91&amp;gt;:  mov    DWORD PTR [esp],eax
+ 0x080484e2 &amp;lt;+94&amp;gt;:  call   0x8048364 &amp;lt;sprintf@plt&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;从代码上基本可以发现在分配变量地址的问题&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt; a[0] --&amp;gt; esp + 0x10
+ a[1] --&amp;gt; esp + 0x14
+ a[2] --&amp;gt; esp + 0x18
+ a[3] --&amp;gt; esp + 0x1c
+ a[4] --&amp;gt; esp + 0x20
+
+ str[0] --&amp;gt; esp + 0x27
+ .....
+ str[5] --&amp;gt; esp + 0x2b
+
+  i ----&amp;gt; esp + 0x2c
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;在C语言书中提到字符串数组末尾都会默认添加一个'\0',这里似乎没看到，于是，通过gdb调试，打印地址，来验证假设:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt; p &amp;amp;i
+ $1 = (int *) 0xbffff82c
+
+ p &amp;amp;str[4]
+ $2 = 0xbffff82b &quot;\b\001&quot;
+
+ p &amp;amp;str[5]
+ $3 = 0xbffff82c &quot;\001&quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;地址和i一样，末尾可能真的没有加零,如果将上面的注释替换掉的话，通过执行memset后，i的值已经变成0了。后来发现只有未初始化的字符串末尾均未加'\0'，这个之前都没有注意过。&lt;/p&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>poll源码分析</title>
+   <link href="http://blog.example.com/2012/08/20/poll.html"/>
+   <updated>2012-08-20T00:00:00+08:00</updated>
+   <id>http://blog.example.com/2012/08/20/poll</id>
+   <content type="html">&lt;p&gt;Linux轮询的方法主要为select,poll,epoll,其中select与poll为fd数目较小的情况下使用，而epoll则在fd大量的情况下使用.poll函数接口如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;int poll(struct pollfd *fds,nfds_t nfds,int timeout)
+struct pollfd {
+      int fd; /* file descriptor */
+      short events; /* requested events */
+      short revents; /* returned events */
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;poll与select方法非常的相似，都是调用每个fd--&gt;file--&gt;f_op-&gt;poll获取每个文件的事件，然后将每个事件复制到用户端，在数据结构方面采用的是链表poll_list:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;struct poll_list {
+    struct poll_list *next;
+    int len;
+    struct pollfd entries[0];
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;首先将用户参数转换为内部的数据结构:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;int do_sys_poll(struct pollfd __user *ufds,unsigned int nfds,
+        struct timespec *end_time)
+{
+     struct poll_wqueues table;
+     .........
+     for(;;) {
+          //将所有的fd利用链表连接起来,但在分配时却不是一次性的分配所有的fd,而是采用链表方式连接起来
+          //但在使用时就会多采用一次循环,与select相同
+          walk-&amp;gt;next = NULL;
+          walk-&amp;gt;len = len;
+          if(!len)
+              break;
+           if(copy_from_user(walk-&amp;gt;entries,ufds + nfds-todo,\
+                      sizeof(struct pollfd) * walk-&amp;gt;len))
+               goto out_fds;
+               ...........
+           size = sizeof(struct poll_list) + sizeof(struct pollfd) * len;
+           walk = walk-&amp;gt;next = kmalloc(size,GFP_KERNEL);
+           if(!walk) {
+               err = -ENOMEM;
+               goto out_fds;
+           }
+     }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;do_poll则实现了具体的轮询机制,每个fd进行轮询&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;static int do_poll(unsigned int nfds,struct poll_list *list,
+           struct poll_wqueues *wait,struct timespec *end_time)
+{
+   poll_table* pt = &amp;amp;wait-&amp;gt;pt;
+   ktime_t expire,*to = NULL
+   int timed_out = 0,count = 0;
+   unsigned long slack = 0;
+
+   if(end_time &amp;amp;&amp;amp; !end_time-&amp;gt;tv_sec &amp;amp;&amp;amp; !end_time-&amp;gt;tv_nsec) {
+       pt = NULL;
+       timed_out = 1
+   }
+
+   if(end_time &amp;amp;&amp;amp; !timed_out)
+       slack = select_estimate_accuracy(end_time);
+
+   for(;;) { //有事件返回或超时就会退出
+       struct poll_list *walk;
+       //遍历每个fd
+       for(walk = list;walk != NULL;walk = walk-&amp;gt;next) {
+          struct pollfd *pfd,*pfd_end;
+
+          pfd = walk-&amp;gt;entries;
+          pfd_end = pfd + walk-&amp;gt;len;
+          //
+          for(;pfd != pfd_end;pfd++) {
+              //将返回的事件直接填写至pollfd上面
+              if(do_pollfd(pfd,pt)) {
+                 count ++;
+                 pt = NULL;
+              }
+          }
+       }
+   pt = NULL;
+   if(!count) {
+      count = wait-&amp;gt;error;
+      if(signal_pending(current))
+          count = -EINTR;
+   }
+   if(count || timed_out)
+        break;
+   if(end_time &amp;amp;&amp;amp; !to) {
+      expire  = timespec_to_ktime(*end_time);
+      to = &amp;amp;expire;
+   }
+   //设置睡眠等待
+   if(!poll_schedule_timeout(wait,TASK_INTERRUPTIBLE,to,slack))
+       timed_out = 1;
+   }
+   return count;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;而do_pollfd就是调用具体的f_op-&gt;poll来判断读写事件情况:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;static inline unsigned int do_pollfd(struct pollfd *pollfd,poll_table *pwait)
+{
+    unsigned int mask;
+    int fd;
+
+    mask = 0;
+    fd = pollfd-&amp;gt;fd;
+
+    if(fd &amp;gt;= 0) {
+        int fput_needed;
+        struct file *file;
+
+        file = fget_light(fd,&amp;amp;fput_needed);
+        mask = POLLNVAL;
+        if(file != NULL) {
+           mask = DEFAULT_POLLMASK;
+           //调用具体文件的poll驱动直接获取可操作的读写事件
+           if(file-&amp;gt;f_op &amp;amp;&amp;amp; file-&amp;gt;f_op-&amp;gt;poll) {
+              if(pwait)
+                 pwait-&amp;gt;key = pollfd-&amp;gt;events | POLLERR | POLLHUP;
+              maks = file-&amp;gt;f_op-&amp;gt;poll(file,pwait);
+           }
+
+           maks &amp;amp;= pollfd-&amp;gt;events | POLLERR | POLLHUP;
+           fput_light(file,fput_needed);
+        }
+    }
+    pollfd-&amp;gt;revents = mask;
+
+    return mask;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1&gt;epoll 分析&lt;/h1&gt;
+
+&lt;p&gt;每当用户调用函数epoll_create,就会创建一个eventpoll对象:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;struct eventpoll {
+    spinlock_t lock;
+    struct mutex mtx;
+    wait_queue_head_t wq;//epoll_wait
+    wait_queue_head_t poll_wait;//用于每个fd中poll轮询的等待队列
+    struct list_head rdlist; //ready list,所有fd就绪队列
+    struct rb_root rbr;//维护fd的数据结构采用rb-tree方式管理
+    struct epitem *ovflist;//连接所有的fd 数据结构
+    struct user_struct *user;//创建该epoll的用户信息
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;轮询部分的源码如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;static int ep_poll(struct eventpoll *ep,struct epoll_event __user *events,
+            int maxevents,long timeout)
+{
+    int res,eavail,timed_out = 0;
+    unsigned long flags;
+    long slack;
+    wait_queue_t wait;
+    ktime_t expires,*to = NULL
+
+    .........
+    if(list_empty(&amp;amp;ep-&amp;gt;rdllist)) {
+        init_waitqueue_entry(&amp;amp;wait,current);
+        __add_wait_queue_exclusive(&amp;amp;ep-&amp;gt;wq,&amp;amp;wait);
+
+        for(;;) {
+            set_current_state(TASK_INTERRUPTIBLE);
+            if(!list_empty(&amp;amp;ep-&amp;gt;rdllist) || timed_out) 
+                break;
+            ......
+            if(!schedule_hrtimeout_range(to,slack,HRTIMER_MODE_ABS))
+                timed_out = 1;
+            ....
+        }
+        __remove_wait_queue(&amp;amp;ep-&amp;gt;wq,&amp;amp;wait);
+        set_current_state(TASK_RUNNING);
+    }
+    eavali = !list_empty(&amp;amp;ep-&amp;gt;rdllist) || ep-&amp;gt;ovflist != EP_UNACTIVE_PTR;
+    .......
+    if(!res &amp;amp;&amp;amp; eavail &amp;amp;&amp;amp;
+       !(res = ep_send_events(ep,events,maxevents)) &amp;amp;&amp;amp; !timed_out)
+       goto retry;
+
+    return res;
+}
+
+ep_send_events
+            --------&amp;gt; ep_scan_ready_list
+                    ----&amp;gt;ep_send_events_proc
+
+static int ep_scan_ready_list(struct eventpoll *ep,int (*sproc)(strut eventpoll *,
+                    struct list_head *,void *),
+                    void *priv)
+{
+    int error,pwake = 0;
+    unsigend long flags;
+    struct epitem *epi,*nepi;
+
+    LIST_HEAD(txlist);
+
+    mutex_lock(&amp;amp;ep-&amp;gt;mtx);
+    spin_lock_irqsave(&amp;amp;ep-&amp;gt;lock,flags);
+    list_splice_init(&amp;amp;ep-&amp;gt;rdllist,&amp;amp;txlist);
+    ep-&amp;gt;ovflist = NULL;
+    spin_unlink_irqrestore(&amp;amp;ep-&amp;gt;lock,flags);
+
+    error = (*sproc)(ep,&amp;amp;txlist,priv);
+    spin_lock_ireqsave(&amp;amp;ep-&amp;gt;lock,flags);
+
+    for(nepi = ep-&amp;gt;ovflist,(epi = nepi) != NULL;
+        nepi = epi-&amp;gt;next,epi-&amp;gt;next = EP_UNACTIVE_PTR) {
+
+        if(!ep_is_linked(&amp;amp;epi-&amp;gt;rdllink));
+           list_add_tail(&amp;amp;epi-&amp;gt;rdllink,&amp;amp;ep-&amp;gt;rdlist);
+    }
+
+    ep-&amp;gt;ovflist = EP_UNACTIVE_PTR;
+    list_splice(&amp;amp;txlist,&amp;amp;ep-&amp;gt;rdllist);
+
+    if(!list_empty(&amp;amp;ep-&amp;gt;rdllist)) {
+          if(waitqueue_active(&amp;amp;ep-&amp;gt;wq))
+             wake_up_locked(&amp;amp;ep-&amp;gt;wq);
+          if(waitqueue_active(&amp;amp;ep-&amp;gt;poll_wait))
+             pwake++;
+    }
+    spin_unlock_ireqrestore(&amp;amp;ep-&amp;gt;lock,flags);
+    mutex_unlock(&amp;amp;ep-&amp;gt;mtx);
+
+    if(pwake)
+        ep_poll_safewake(&amp;amp;ep-&amp;gt;poll_wait);
+
+    return error;
+}
+
+static int ep_send_events_proc(struct eventpoll *ep,struct list_head *head,
+                    void *priv)
+{
+        struct ep_send_events_data *esed = priv;
+        int eventcnt;
+        unsigned int revents;
+        struct epitem *epi;
+        struct epoll_event __user *uevent;
+
+        for(eventcnt = 0,uevent = esed-&amp;gt;events;
+            !list_empty(head) &amp;amp;&amp;amp; eventcnt &amp;lt; esed-&amp;gt;maxevents;) {
+
+            epi = list_first_entry(head,struct epitem,rdllink);
+            list_del_init(&amp;amp;epi-&amp;gt;rdllink);
+            revents = epi-&amp;gt;ffd.file-&amp;gt;f_op_poll(epi-&amp;gt;ffd.file,NULL) &amp;amp;
+               epi-&amp;gt;event.events;
+
+            if(revents) {
+                if(__put_user(revents,&amp;amp;uevent-&amp;gt;events) ||
+                   __put_user(epi-&amp;gt;event.data,&amp;amp;uevent-&amp;gt;data)) {
+                   list_add(&amp;amp;epi-&amp;gt;rdllink,head);
+                   return eventcnt ? eventcnt:-EFAULT;
+                }
+                eventcnt ++;
+                uevent ++;
+                if(epi-&amp;gt;event.events &amp;amp; EPOLLONESHOT)
+                  epi-&amp;gt;event.events &amp;amp;= EP_PRIVATE_BITS;
+                else if(!(epi-&amp;gt;event.events &amp;amp; EPOLLET)) {
+                   list_add_tail(&amp;amp;epi-&amp;gt;rdllink,&amp;amp;ep-&amp;gt;rdllist);
+                }
+            }
+        }
+
+        return eventcnt;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;当新来的fd加入到epoll监听时，epoll就会对该fd进行poll驱动监听.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;static int ep_insert(struct eventpoll *ep,struct epoll_event *event,
+               struct file *tfile,int fd)
+{
+    int error,revents,pwake = 0;
+    unsigned long flags;
+    struct epitem *epi;
+    struct ep_pqueue epq;
+
+    user_watches = atomic_long_read(&amp;amp;ep-&amp;gt;user-&amp;gt;epoll_watches);
+    if(unlikely(user_watches &amp;gt;= max_user_watches))
+       return -ENOSPC;
+    if(!(epi = kmem_cache_alloc(epi_cache,GFP_KERNEL)))
+       return -ENOMEM;
+
+    INIT_LIST_HEAD(&amp;amp;epi-&amp;gt;rdllink);
+    INIT_LIST_HEAD(&amp;amp;epi-&amp;gt;fllink);
+    INIT_LIST_HEAD(&amp;amp;epi-&amp;gt;pwqlist);
+    epi-&amp;gt;ep = ep;
+    ep_set_ffd(&amp;amp;epi-&amp;gt;ffd,tfile,fd);
+    ....
+    epi-&amp;gt;next = EP_UNACTIVE_PTR;
+    epq.epi = epi;
+    init_poll_funcptr(&amp;amp;epq,pt,ep_ptable_queue_proc);
+
+    revents = tfile-&amp;gt;f_op-&amp;gt;poll(tfile,&amp;amp;epq.pt);
+
+    error = -ENOMEM;
+    if(epi-&amp;gt;nwait &amp;lt; 0) 
+       goto error_unregister;
+
+    spin_lock(&amp;amp;tfile-&amp;gt;f_lock);
+
+}
+&lt;/code&gt;&lt;/pre&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>radix-tree 源码分析</title>
+   <link href="http://blog.example.com/2012/08/19/radix-tree.html"/>
+   <updated>2012-08-19T00:00:00+08:00</updated>
+   <id>http://blog.example.com/2012/08/19/radix-tree</id>
+   <content type="html">&lt;p&gt;在判断一个文件内部的页是否为脏及页的状态时，所使用的数据结构就是radix-tree(基数).&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#define RADIX_TREE_INDIRCT_PTR 1
+#define RADIX_TREE_RETRY  ((void *)-1UL)
+#define RADIX_TREE_MAP_SHIFT (CONFIG_BASE_SMALL ? 4 : 6)
+#define RADIX_TREE_MAP_SIZE (1UL &amp;lt;&amp;lt; RADIX_TREE_MAP_SHIFT)
+#define RADIX_TREE_MAP_MASK (RADIX_TREE_MAP_SIZE - 1)
+#define RADIX_TREE_TAG_LONGS ((RADIX_TREE_MAP_SIZE + BITS_PER_LONG - 1) / BITS_PER_LONG)
+
+struct radix_tree_root {
+    unsigned int   height; //radix-tree 的高度
+    gfp_t    gfp_mask; //内存分配的标志
+    struct radix_tree_node *rnode; //树的根节点
+};
+
+struct radix_tree_node {
+    unsigned int height; //该节点的高度(从底层开始)
+    unsigend int count; //该节点的所存储的元素个数
+    struct rcu_head rcu_head; //同步机制
+    void *slots[RADIX_TREE_MAP_SIZE]; //存放具体的页指针
+    unsigend long tags\[RADIX\_TREE\_MAX\_TAGS\]\[RADIX\_TREE\_TAGS\_LONGS\]; //标签标记
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;当系统初始化时，初始化具体的radix-tree:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;void ___init radix_tree_init(void) 
+{
+   radix_tree_node_cachep = kmem_cache_create(&quot;radix_tree_node&quot;,
+           sizeof(struct radix_tree_node),0,
+           SLAB_PANIC | SLAB_RECLAIM_ACCOUNT,
+           radix_tree_node_ctor);
+   radix_tree_init_maxindex();
+   hotcpu_notifier(radix_tree_callback,0);
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;其中最重要的部分就是&lt;em&gt;radix_tree_init_maxindex&lt;/em&gt;函数:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;static __init void radix_tree_init_maxindex(void)
+{
+   unsigned int i;
+
+   for(i = 0; i &amp;lt; ARRAY_SIZE(height_to_maxindex); i++)
+        height_to_maxindex[i] = __maxindex(i);
+}
+
+static __init unsigned long __maxindex(unsigned int height)
+{
+    unsigned int width = height * RADIX_TREE_MAP_SHIFT;
+    int shift  = RADIX_TREE_INDEX_BITS - width;
+
+    if(shift &amp;lt; 0)
+        return ~0UL;
+    if(shift &amp;gt;= BITS_PER_LONG)
+        return 0UL;
+    return ~0UL &amp;gt;&amp;gt; shift;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;该函数的主要作用就是将一个key分为不同的部分，每一部分负责一层，计算每一层的具体掩码.&lt;/p&gt;
+
+&lt;p&gt;以32位为例:RADIX_TREE_MAP_SHIFT = 4  RADIX_TREE_INDEX_BITS 32&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;高度          index      
+ 0         0x0000 0000   
+ 1         0x0000 000f   
+ 2         0x0000 00ff   
+ ....     ............   
+ 8         0xffff ffff  
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt; 当插入时就需要该索引进行获取对应高度的掩码，来进行判断该slot是否有数据以决定操作，具体如下图所示:&lt;/p&gt;
+
+&lt;p&gt; &lt;img src=&quot;http://lwn.net/images/ns/kernel/radix-tree-2.png&quot; alt=&quot;radix-tree原理图&quot; /&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;int radix_tree_insert(struct raidx_tree_root *root,unsigned long index,void *item)
+{
+    struct radix_tree_node *node = NULL,*slot;
+    unsigned int height,shift;
+    int offset;
+
+    ......
+
+    //不能超过树的最大表示范围，否则需要进行增加高度
+    if(index &amp;gt; radix_tree_maxindex(root-&amp;gt;heigth)) {
+       error = radix_tree_extend(root,index);
+       if(error)
+           return error;
+    }
+
+    //这里不是很清楚，为什么低位做为indirect指针的标志?
+    slot = radix_tree_indirect_to_ptr(root-&amp;gt;rnode); 
+    height = root-&amp;gt;height;
+    //所有高度需要进行的移位数
+    shift = (height - 1) * RADIX_TREE_MAP_SHIFT;
+
+    offset = 0;
+    while(height &amp;gt; 0) {
+        //node 记录父节点，slot则记录当前节点
+        if(slot == NULL) {
+            if(!(slot = radix_tree_node_allc(root)))
+                   return -ENOMEM;
+            slot-&amp;gt;height  = height;
+            if(node) {
+                rcu_assign_pointer(node-&amp;gt;slots[offset],slot);
+                node-&amp;gt;count++;
+            } else
+               rcu_assign_pointer(root-&amp;gt;rnode,radix_tree_ptr_to_indirect(slot));
+        }
+
+    offset = (index &amp;gt;&amp;gt; shift) &amp;amp; RADIX_TREE_MAP_MASK;
+    node = slot;
+    slot = node-&amp;gt;slots[offset];
+    shift -= RADIX_TREE_MAP_SHIFT;
+    height --;
+}
+
+if(slot != NULL)
+   return -EEXIST;
+
+//最后就直接将记录插入到父节点的叶子节点中
+if(node) {
+   node-&amp;gt;count ++;
+   rcu_assign_pointer(node-&amp;gt;slots[offset],item);
+   BUG_ON(tag_get(node,0,offset));
+   BUG_ON(tag_get(node,1,offset));
+} else {
+   rcu_assign_pointer(root-&amp;gt;rnode,item);
+   BUG_ON(root_tag_get(root,0));
+   BUG_NO(root_tag_get(root,1));
+}
+
+return 0;
+
+}
+&lt;/code&gt;&lt;/pre&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Process File</title>
+   <link href="http://blog.example.com/2012/08/15/process-file.html"/>
+   <updated>2012-08-15T00:00:00+08:00</updated>
+   <id>http://blog.example.com/2012/08/15/process-file</id>
+   <content type="html">&lt;p&gt;在进程的描述符中，关于文件描述符的定义如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;struct task_struct {
+    ....
+    struct files_struct *files;
+    ....
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这里的file_struct 里面就是文件打开表的一些定义:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;struct files_struct {
+  atomic_t count;
+  struct fdtable __rcu *fdt;
+  struct fdtable fdtab;
+
+  spinlock_t file_lock __cacheline__aligned_in_smp;
+  int next_fd;//文件打开时，下一个fd，也就是打开fd的数量
+  .......
+  struct file __rcu *fd_array[NR_OPEN_DEFAULT];//为了加快访问速度
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;默认，内核只缓存每个进程的文件描述符为:NR_OPEN_DEFUALT&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;#define NR_OPEN_DEFAULT BITS_PER_LONG
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;在32位系统中，BITS_PER_LONG为32，64位系统则64,所有文件打开表的信息都存放在数据结构fdtable中:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;struct fdtable {
+    unsigned int max_fds; //支持的最大fd个数
+    struct file __rcu **fd;//这里就存放了文件打开时的文件了，索引即文件的fd
+    fd_set *close_on_exec;
+    fd_set *open_fds;//每一位暗示对应的fd是否已经被使用
+    struct rcu_head rcu;
+    struct fdtable *next;
+}
+
+typedef struct {
+   unsigned long fds_bits[__FDSET_LONGS];
+} __kernel_fd_set;
+
+typedef __kernel_fd_set fd_set;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;在每个进程打开文件表的背后就是具体的文件file结构体了，该数据结构定义如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;lt;linux/fs.h&amp;gt;
+
+struct file {
+    union {
+        struct list_head fu_list; 
+        struct rcu_head fu_rcuhead;
+    } f_u;
+
+    struct path f_path;
+    const struct file_operations *f_op;//这里就是由文件系统开发者实现了
+    struct fown_struct f_owner;//异步读写SIGIO支持
+    struct file_ra_state f_ra;//预读取支持
+    spinlock_t f_lock;
+    atomic_long_t f_count;
+    unsigned int f_flags;//open 系统调用标记
+    fmode_t f_mode;
+    loff_t f_pos; //文件的偏移量
+    ....
+    void   *private_data;//不同文件系统的私有数据.
+    struct address_space *f_mapping;//支持mmap 内存映射
+    ....
+}
+
+struct path {
+    struct vfsmount *mnt;
+    struct dentry *dentry;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;每个文件的背后管理都是内核态由具体文件系统来实现，而在用户态则体现为路径管理，这里的&lt;em&gt;struct path&lt;/em&gt;就是这样的桥梁作用.这样来讲具体的文件系统的调用关系图如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;                     -------&amp;gt; file ----&amp;gt;  path    ----&amp;gt; vfsmount --&amp;gt; super_block
+file_struct ----&amp;gt;fdtable                          ----&amp;gt; dentry --&amp;gt; inode
+                     -------&amp;gt; file 
+
+                     -------&amp;gt; file
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;当打开文件表的fd多于默认打开的fd个数，这时就需要进行扩展fdtable了，具体实现如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;lt;fs/file.c&amp;gt;
+
+int expand_files(struct files_struct *files,int nr)
+    ----&amp;gt; static int expand_fdtable(struct files_struct *files,int nr)
+
+static int expand_fdtable(struct files_struct *files,int nr)
+{
+     struct fdtable *new_fdt,*cur_fdt;
+
+     ...
+     new_fdt = alloc_fdtable(nr);
+     ...
+
+     cur_fdt = files_table(files);
+     if(nr &amp;gt;= cur_fdt-&amp;gt;max_fds) {
+        copy_fdtable(new_fdt,cur_fdt);
+        rcu_assign_pointer(files-&amp;gt;fdt,new_fdt);
+        if(cur_fdt-&amp;gt;max_fds &amp;gt; NR_OPEN_DEFAULT)
+            free_fdtable(cur_fdt);
+     } else {
+        __free_fdtable(new_fdt);
+     }
+
+     return 1;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;当进行文件打开时，调用流程如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;lt;fs/open.c&amp;gt;
+open --&amp;gt;
+         do_sys_open
+            ---&amp;gt; do_filp_open
+              ---&amp;gt; finish_open
+                ----&amp;gt; nameidata_to_filp
+                   ---&amp;gt; __dentry_open
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;__dentry_open 函数就是在经过对路径解析(路径到inode节点的翻译)及权限判断，打开标志检查之后，开始进行初始化file数据结构:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;lt;fs/open.c&amp;gt;
+
+static struct file * __dentry_open(struct dentry *dentry,struct vfsmount *mnt,struct file *f,
+                                   int (*open)(struct inode *,struct file *),
+                                   const struct cred *cred)
+{
+      struct inode *inode;
+      int error;
+
+      f-&amp;gt;f_mode = OPEN_FMODE(f-&amp;gt;f_flags) | FMODE_LSEEK | FMODE_PREAD | FMODE_PWRITE;
+      inode = dentry-&amp;gt;d_inode;
+
+      ....
+
+      f-&amp;gt;f_mapping = inode-&amp;gt;i_mapping;
+      f-&amp;gt;f_path.dentry = dentry;
+      f-&amp;gt;f_path.mnt = mnt;
+      f-&amp;gt;f_pos = 0;
+      f-&amp;gt;f_op = fops_get(inode-&amp;gt;i_fop);
+      file_sb_list_add(f,inode-&amp;gt;i_sb);
+      .....
+      if(!open &amp;amp;&amp;amp; f-&amp;gt;f_op)
+          open = f-&amp;gt;f_op-&amp;gt;open;
+      if(open) {
+         error = open(inode,f);
+         if(error)
+            goto cleanup_all;
+      }
+
+      ima_counts_get(f);
+      f-&amp;gt;f_flags &amp;amp;= ~(O_CREAT | O_EXCL | O_NOCTTY | O_TRUNC);
+
+      file_ra_state_init(&amp;amp;f-&amp;gt;f_ra,f-&amp;gt;f_mapping-&amp;gt;host-&amp;gt;i_mapping);
+      .....
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;在dentry缓存中，所有的文件夹和文件均是一个目录项,每一个文件(struct file)都有一个目录项(struct dentry)和inode节点(struct inode),最重要的就是安装上与文件对应的操作函数，并调用对应的回调函数,返回给用户.
+在fcntl中有open函数的声明，如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;__nonnull:gcc 扩展，规定__file不为NULL
+extern int open(__const char *__file,int __oflags, ...) __nonnull ((1));
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;当文件关闭时，则调用流程如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;&amp;lt;fs/file_table.c&amp;gt;
+sys_close --&amp;gt;
+            filp_close ---&amp;gt;
+                          fput --&amp;gt; 
+                                 __fput
+
+int filp_close(struct file *filp,fl_owner_t id)
+{
+    int retval = 0;
+
+    //正在使用的文件对象为0,明显出错了
+    if(!file_count(filp)) {
+        printk(KERN_ERR &quot;VFS: Close: file count is 0\n&quot;);
+        return 0;
+    }
+
+    if(filp-&amp;gt;f_op &amp;amp;&amp;amp; filp-&amp;gt;f_op-&amp;gt;flush)
+        retval = filp-&amp;gt;f_op-&amp;gt;flush(filp,id);
+
+    dnotify_flush(filp,id);
+    locks_remove_posix(filp,id);
+    //减少引用技术，当计数为0时，调用注册的f_op release/faysnc 方法,释放系统资源
+    fput(filp);
+
+    return retval;
+}
+&lt;/code&gt;&lt;/pre&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Tcp Sock</title>
+   <link href="http://blog.example.com/2012/08/06/tcp-sock.html"/>
+   <updated>2012-08-06T00:00:00+08:00</updated>
+   <id>http://blog.example.com/2012/08/06/tcp-sock</id>
+   <content type="html">&lt;p&gt;在tcp/ip中有一些比较重要的数据结构,主要是一些内核态的数据结构和用户态的数据结构.其中用户态系统调用的入口为socketcall函数:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;net/socket.c
+
+SYSCALL_DEFINE2(socketcall, int, call, unsigned long __user *, args)  
+{  
+    .......  
+    switch (call) {  
+    case SYS_SOCKET:  
+    err = sys_socket(a0, a1, a[2]);  
+    break;  
+    case SYS_BIND:  
+    err = sys_bind(a0, (struct sockaddr __user *)a1, a[2]);  
+    break;  
+    case SYS_CONNECT:  
+    err = sys_connect(a0, (struct sockaddr __user *)a1, a[2]);  
+    break;  
+    case SYS_LISTEN:  
+    err = sys_listen(a0, a1);  
+    break;  
+    case SYS_ACCEPT:  
+    err = sys_accept4(a0, (struct sockaddr __user *)a1,  
+          (int __user *)a[2], 0);  
+    break;  
+    case SYS_GETSOCKNAME:  
+    err =  sys_getsockname(a0, (struct sockaddr __user *)a1,  
+       (int __user *)a[2]);  
+       break;  
+    case SYS_GETPEERNAME:  
+    err =  
+         sys_getpeername(a0, (struct sockaddr __user *)a1,  
+           (int __user *)a[2]);  
+    break;  
+    ........   
+    default:  
+    err = -EINVAL;  
+    break;  
+    }  
+return err;  
+}  
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;当创建一个socket时,则调用函数sys_socket,该函数就创建了一个与用户态交流的socket数据结构,该函数部分源码如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;include/linux/net.h
+
+struct socket {  
+   socket_state state; //socket 当前状态(SS_FREE,SS_UNCONNECTED,SS_CONNECTING,SS_CONNECTED,SS_DISCONNECTING)  
+   ....
+   struct faysnc_struct *fasync_list;
+   wait_queue_head_t wait;
+
+   struct file *file; //与文件系统VFS联系起来
+   struct sock *sk; //内核态维护的数据结构
+   const struct proto_ops *ops;//所有的相关操作
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;   }&lt;/p&gt;
+
+&lt;p&gt;接着就是sys_socket函数:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;net/socket.c
+
+SYSCALL_DEFINE3(socket,int,family,int,type,int,protocol)
+{
+    struct socket *sock;
+    ........
+    retval = sock_create(family,type,protocol,&amp;amp;sock);
+    .......
+    retval = sock_map_fd(sock,flags &amp;amp; (O_CLOEXEC | O_NONBLOCK));
+    .......
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;而函数sock_create中就是与对应的协议相关联起来并建立内核态(sock)和用户态(socket)的数据结构,sock_create中主要有两件事情:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;net/socket.c
+
+sock_create
+          ----&amp;gt; __sock_create              
+
+static int __sock_create(struct net *net,int family,int type,int protocol,struct socket **res,int kern)
+{
+    struct socket *sock;
+    const struct net_proto_family *pf; 
+    .......
+    sock = sock_alloc(); //这里分配两项:inode 和 socket
+    ......
+    pf = rcu_deference(net_families[family]); //调用具体的协议创建与之相对应的操作
+    ......
+    pf-&amp;gt;create(net,sock,protocol);
+    .....
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt; 假设在socket系统调用中domain(family)为AF_INET,type为SOCK_STREAM,则调用ipv4中的创建函数:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt; net/af_inet.c
+
+ static struct net_proto_family inet_family_ops = {
+    .family = PF_INET,
+    .create = inet_create,
+    .owner = THIS_MODULE,
+ };
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;inet_create 就开始初始化与具体协议相关的数据项,这里创建内核态数据结构(struct sock)及初始化部分socket中的字段:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt; net/af_inet.c
+
+ static int inet_create(struct net *net,struct socket *sock,int protocol)  
+ {
+    struct sock *sk;
+    struct inet_protosw *answer;
+    struct inet_sock *inet;
+    struct proto *answer_prot;
+    .......
+    sock-&amp;gt;type = SS_UNCONNECTED;
+    ....
+    //从对应的协议中找出支持的协议(默认为0,因为一般只有与type对应的一种协议)
+    list_for_each_entry_rcu(answer,&amp;amp;inetsw[sock-&amp;gt;type],list) {
+        ........
+    }
+
+    sock-&amp;gt;ops = answer-&amp;gt;ops;
+    answer_prot = answer-&amp;gt;prot;
+    ......
+    //初始化内核数据结构 struct sock
+    sk = sk_alloc(net,PF_INET,GFP_KERNEL,answer_prot);
+    .....
+    sock_init_data(sock,sk);
+
+    sk-&amp;gt;sk_destruct    =  inet_sock_destruct;
+    sk-&amp;gt;sk_protocol    =  protocol;
+    sk-&amp;gt;sk_backlog_rcv = sk-&amp;gt;sk_prot-&amp;gt;backlog_rcv;
+
+    .......
+ }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这里最关键的部分就是 sock-&gt;ops = answer-&gt;ops 将对应协议操作具体化.该链表数据实际的数据定义如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt; net/af_inet.c
+
+ static struct inet_protosw inetsw_array[] = 
+ {
+    {
+       .type  = SOCK_STREAM,
+       .protocol = IPPROTO_TCP,
+       .prot = &amp;amp;tcp_prot,
+       .ops = &amp;amp;inet_stream_ops,
+       .capcability = -1,
+       .no_check = 0,
+       .flags = INEET_PROTOSW_PERMANET | INET_PROTOSW_ICSK,
+    },
+
+    ...........
+
+ }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;而具体的操作函数inet_stream_ops 定义如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;net/af_inet.c
+
+const struct proto_ops inet_stream_ops = {
+    .family  =  PF_INET,
+    .owner   =  THIS_MODULE,
+    .bind    =  inet_bind,
+    .release = inet_release,
+    .........
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;当创建完用户态与内核态的数据结构后,剩下部分就是安装在文件系统VFS中,也就是函数sock_map_fd了.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;net/socket.c
+
+int sock_map_fd(struct socket *sock,int flags)
+{
+    struct file *newfile;
+    int fd = sock_alloc_fd(&amp;amp;newfile,flags);
+
+    if(likely(fd &amp;gt;= 0)) {
+          //将socket 与 file 相关联
+        int err = sock_attach_fd(sock,newfile,flags);
+
+        .......
+        //放到符号表中
+        fd_install(fd,newfile);
+
+        .......
+    }
+
+    return fd;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;sock_attach_fd函数原型如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;net/socket.c
+
+static int sock_attach_fd(struct socket *sock,struct file *file,int flags)
+{
+    struct dentry *dentry;
+
+    ......
+
+    dentry-&amp;gt;d_op = &amp;amp;sockfs_dentry_operations;
+
+    .......
+    //关键部分在这里,将文件系统与socket连接起来
+    sock-&amp;gt;file =file;
+    ...
+    SOCK_INDOE(sock)-&amp;gt;i_fop = &amp;amp;socket_file_ops;
+    file-&amp;gt;private_data = sock;
+    .......
+
+    return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;而socket_file_ops的具体定义如下:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;net/socket.c
+
+static const struct file_operations socket_file_ops = {
+    .owner  =   THIS_MODULE,
+    .llseek = no_llseek,
+    .aio_read = sock_aio_read,
+    .aio_writ = sock_aio_write,
+    .poll = sock_poll,
+    .mmap = sock_mmap,
+    ........
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这样整个初始化就完成了.&lt;/p&gt;
+</content>
+ </entry>
  
  <entry>
    <title>Second Post</title>
