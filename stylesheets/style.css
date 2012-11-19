@@ -2,8 +2,7 @@ body {
     color:#fff0f5;}
 
 a {
-  text-decoration:none; 
-  color:}
+  text-decoration:none;}
   a:hover {
       -webkit-transition: color .2s linear;
       -moz-transition: color .2s linear;
