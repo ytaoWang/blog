@@ -1,7 +1,9 @@
 body {
     font-family:"Hirging Sans GB","Microsoft YaHei","Times New Roman",sans-serif;
-    margin-left:10%;
-    margin-right:10%;
+    margin-left:auto;
+    margin-right:auto;
+    width:50em;
+    text-align:left;
   }
 
 a {
