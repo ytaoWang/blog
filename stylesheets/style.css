@@ -1,0 +1,11 @@
+@import url(http://fonts.googleapis.com/css?family=Overlock);
+@import url(http://fonts.googleapis.com/css?family=Coda);
+
+/*------------------
+* @2012-11-19
+* ------------------------ */
+
+body {
+    font-size: 14px;
+    font-family:"Overlock","Hiragino Snas GB","Microsof YaHei",sans-serif;
+    color: #555555 }
