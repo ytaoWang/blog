@@ -12,6 +12,7 @@ header {
     font-family:"Overlock","Hiragino Sans GB"
     width:20%;
     height:20%;
+    display:block;
     background-color:#ff00ff;
   }
 
