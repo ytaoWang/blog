@@ -7,8 +7,12 @@ body {
     margin-right:20%;
     text-align:left;
   }
+
 header {
     font-family:"Overlock","Hiragino Sans GB"
+    width:20%;
+    height:10em;
+    bgcolor:#55bbee;
   }
 
 a {
