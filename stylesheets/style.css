@@ -1,8 +1,14 @@
+@import url(http://fonts.googleapis.com/css?family=Overlock);
+@import url(http://fonts.googleapis.com/css?family=Coda);
+
 body {
     font-family:"Hirging Sans GB","Microsoft YaHei","Times New Roman",sans-serif;
     margin-left:20%;
     margin-right:20%;
     text-align:left;
+  }
+header {
+    font-family:"Overlock","Hiragino Sans GB"
   }
 
 a {
