@@ -28,7 +28,6 @@
     {% endif %}
   </head>
   <body class="home_body">
-    <div id="main">
       <div id="header">
 	<h1 id="site-title">
 	  {{ site.title }}
@@ -41,9 +40,9 @@
 	      </li>
 	  </ul>
 	</div>
-
 	</div>
-    <div>
+      <!-- #header -->
+    <div id="main">
       <div>
         {% if page.title %}<h1>{{ page.title }}</h1>{% endif %}
         {{ content }}
@@ -54,6 +53,5 @@
     <a href="http://github.com/{{ site.github.username }}"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub" /></a>
   {% endif %}
     <footer>&copy; power by jekyll and <a href="http://www.lhzhang.com">lhzhang</a> </footer>
-    </div>
   </body>
 </html>
