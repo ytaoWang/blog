@@ -209,7 +209,7 @@ body,
 input,
 textarea {
 	color: #666;
-	font-size: 12px;
+	font-size: 16px;
 	line-height: 18px;
 }
 hr {
@@ -464,7 +464,7 @@ div.menu li {
 #content input,
 #content textarea {
 	color: #333;
-	font-size: 16px;
+	font-size: 18px;
 	line-height: 24px;
 }
 #content p,
