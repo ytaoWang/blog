@@ -1,7 +1,7 @@
 ---
 layout: default
 ---
-{% if page.date %}<div class="postdate">发表于 {{ page.date | date:"%Y-%m-%d" }}{% if page.last_updated %}, last updated on {{ page.last_updated | date_to_string }}{% endif %}</div>{% endif %}
+{% if page.date %}<div class="meta-prep meta-prep-author">发表于 {{ page.date | date:"%Y-%m-%d" }}{% if page.last_updated %}, last updated on {{ page.last_updated | date_to_string }}{% endif %}</div>{% endif %}
 
 <div class="post">
 {{ content }}
