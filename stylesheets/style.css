@@ -1,11 +1,12 @@
 @import url(http://fonts.googleapis.com/css?family=Overlock);
 @import url(http://fonts.googleapis.com/css?family=Coda);
 
-body {
+.home_body {
     font-family:"Hirging Sans GB","Microsoft YaHei","Times New Roman",sans-serif;
-    margin-left:20%;
-    margin-right:20%;
     text-align:left;
+    color:rgb(102,102,102);
+    font-size:12px;
+    line-height:18px;
   }
 
 header {
@@ -20,4 +21,9 @@ a {
   a:hover {
       -webkit-transition: color .2s linear;
       -moz-transition: color .2s linear;
+  }
+#main {
+    background:none repeat scroll 0% rgb(255,255,255);
+    margin-top:20px;
+    padding:0pt 20px;
   }
