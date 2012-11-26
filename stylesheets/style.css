@@ -9,7 +9,15 @@
     line-height:18px;
   }
 
-header {
+#site-title {
+    float:left;
+    font-size:30px;
+    line-height:36px;
+    margin:0pt 0pt 18px;
+    width:700px;
+ }
+
+#header {
     font-family:"Overlock","Hiragino Sans GB"
     width:20%;
     height:20%;
