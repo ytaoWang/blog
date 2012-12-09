@@ -1,7 +1,7 @@
 ---
 layout: post
 title: radix-tree 源码分析
-tags: [linux,源码分析,C]
+tags: [linux, 源码分析, C]
 ---
 
 在判断一个文件内部的页是否为脏及页的状态时，所使用的数据结构就是radix-tree(基数).

@@ -1,7 +1,7 @@
 ---
 layout: post
 title:进程中的文件表关系
-tags: [linux,源码分析,C]
+tags: [linux, 源码分析, C]
 ---
 
 在进程的描述符中，关于文件描述符的定义如下:

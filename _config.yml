@@ -1,6 +1,6 @@
 # standard jekyll configuration
 
-permalink: date
+permalink: blog/:year/:month/:title/
 pygments: true
 exclude: ['Rakefile', 'README.md', 'config.rb']
 markdown: rdiscount
@@ -21,8 +21,8 @@ email: yt0907.Wang@gmail.com
 # google_analytics:
 #   account: UA-XXXXX-X
 
-github:
-  username: ytaoWang
+#github:
+#  username: ytaoWang
 
 disqus: 
   id: ytaowang
