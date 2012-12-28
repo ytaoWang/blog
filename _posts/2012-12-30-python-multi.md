@@ -10,7 +10,7 @@ tags: [python]
 
  如果C从C<sup>'</sup>直接继承属性P(如图1),(C != C<sup>'</sup>),C<sup>'</sup>所有的父类(包含C<sup>'</sup>)均在线性化中都是C的子列表。这样的话，C的线性化列表不用遍历C的所有继承体系，直接通过C的直接继承父类线性化列表获得(通过归并父类列表获得)。
  
- ![继承图1](/images/python_multi_1.png)
+ ![继承图1](/blog/images/python_multi_1.png)
 
 * 一致性
 
@@ -23,7 +23,7 @@ tags: [python]
 
 假设类的继承关系图为:
 
-![继承图2](/images/python_multi_2.png)
+![继承图2](/blog/images/python_multi_2.png)
 
 通过计算扩展关系 <<sub>e</sub>:<br/>
 5 <<sub>e</sub> 6  <br/>
@@ -33,7 +33,7 @@ tags: [python]
 
 这样最终的关系图为:
 
-![继承图3](/images/python_multi_3.png)
+![继承图3](/blog/images/python_multi_3.png)
 
 线性化关系为:<br/>
 
