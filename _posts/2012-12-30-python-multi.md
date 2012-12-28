@@ -46,3 +46,9 @@ tags: [python]
     L(1) = {'1','2','3','4','5','6','7','object'}
 
 python 代码在[这里](https://github.com/ytaoWang/test/blob/master/python_test/multi_inheritance.py)
+
+参考资料:<br/>
+R.Ducournau. Proposal for a Monotonic Multiple Inheritance Linearization,OOPSLA'94 <br/>
+R.Ducouranu. Monotonic Conflict Resolution Mechanisms for Inheritance,OOPSLA'92 <br/>
+Kim Barrett. A Monotonic Superclass Linearization for Dylan <br/>
+python 多继承:http://www.artima.com/weblogs/viewpost.jsp?thread=246488 <br/>
