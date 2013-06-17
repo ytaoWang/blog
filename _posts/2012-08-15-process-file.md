@@ -13,39 +13,39 @@ struct task_struct {
 }
 {% endhighlight %}
 这里的file_struct 里面就是文件打开表的一些定义:
-
-    struct files_struct {
- 	  atomic_t count;
-	  struct fdtable __rcu *fdt;
-	  struct fdtable fdtab;
-	  
-	  spinlock_t file_lock __cacheline__aligned_in_smp;
-	  int next_fd;//文件打开时，下一个fd，也就是打开fd的数量
-	  .......
-	  struct file __rcu *fd_array[NR_OPEN_DEFAULT];//为了加快访问速度
-    }
-
+{% highlight c %}
+struct files_struct {
+atomic_t count;
+struct fdtable __rcu *fdt;
+struct fdtable fdtab;
+    
+spinlock_t file_lock __cacheline__aligned_in_smp;
+int next_fd;//文件打开时，下一个fd，也就是打开fd的数量
+.......
+struct file __rcu *fd_array[NR_OPEN_DEFAULT];//为了加快访问速度
+}
+{% endhighlight %}
 默认，内核只缓存每个进程的文件描述符为:NR\_OPEN\_DEFUALT
-          
-    #define NR_OPEN_DEFAULT BITS_PER_LONG
-
+{% highlight c %}          
+#define NR_OPEN_DEFAULT BITS_PER_LONG
+{% endhighlight %}
 在32位系统中，BITS\_PER\_LONG为32，64位系统则64,所有文件打开表的信息都存放在数据结构fdtable中:
-     
-	struct fdtable {
-		unsigned int max_fds; //支持的最大fd个数
-		struct file __rcu **fd;//这里就存放了文件打开时的文件了，索引即文件的fd
-		fd_set *close_on_exec;
-		fd_set *open_fds;//每一位暗示对应的fd是否已经被使用
-		struct rcu_head rcu;
-		struct fdtable *next;
-	}
+{% highlight c %}     
+struct fdtable {
+unsigned int max_fds; //支持的最大fd个数
+struct file __rcu **fd;//这里就存放了文件打开时的文件了，索引即文件的fd
+fd_set *close_on_exec;
+fd_set *open_fds;//每一位暗示对应的fd是否已经被使用
+struct rcu_head rcu;
+struct fdtable *next;
+}
 
-    typedef struct {
-	   unsigned long fds_bits[__FDSET_LONGS];
-	} __kernel_fd_set;
-	
-	typedef __kernel_fd_set fd_set;
-	
+typedef struct {
+unsigned long fds_bits[__FDSET_LONGS];
+} __kernel_fd_set;
+    
+typedef __kernel_fd_set fd_set;
+{% endhighlight %}	
 在每个进程打开文件表的背后就是具体的文件file结构体了，该数据结构定义如下:
 
     <linux/fs.h>
