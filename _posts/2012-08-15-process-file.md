@@ -25,7 +25,9 @@ int next_fd;//文件打开时，下一个fd，也就是打开fd的数量
 struct file __rcu *fd_array[NR_OPEN_DEFAULT];//为了加快访问速度
 }
 {% endhighlight %}
+
 默认，内核只缓存每个进程的文件描述符为:NR\_OPEN\_DEFUALT
+
 {% highlight c %}          
 #define NR_OPEN_DEFAULT BITS_PER_LONG
 {% endhighlight %}
