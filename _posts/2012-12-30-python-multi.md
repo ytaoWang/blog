@@ -2,7 +2,7 @@
 layout: post
 title: python多继承
 tags: [python]
-----
+---
 
 多继承在针对派生类中的同名函数时，python 需要对其进行线性化(C3 Linerization),将继承图关系线性化。通过线性化，再依次查找类方法，直至找到该方法为止。线性化算法是python多继承的核心部分。线性化过程中，必须满足两个性质:
 
