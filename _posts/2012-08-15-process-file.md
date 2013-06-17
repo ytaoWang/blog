@@ -5,13 +5,13 @@ tags: [linux, 源码分析, C]
 ---
 
 在进程的描述符中，关于文件描述符的定义如下:
- <code class="C">
+{% highlight c %}
     struct task_struct {
         ....
 	    struct files_struct *files;
 	    ....
 	}
-</code>
+{% endhight %}
 这里的file_struct 里面就是文件打开表的一些定义:
 
     struct files_struct {
