@@ -11,7 +11,7 @@ struct task_struct {
     struct files_struct *files;
     ....
 }
-{% endhight %}
+{% endhighlight %}
 这里的file_struct 里面就是文件打开表的一些定义:
 
     struct files_struct {
