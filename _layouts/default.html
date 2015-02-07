@@ -44,6 +44,11 @@
 	    <li class="current_page_item">
 	      <a title="首页" href="{{site.url}}/blog">首页</a>
 	      </li>
+		{% for page_name in site.pages_list %}
+		<li class="page-item page-item-1271"> 
+	      <a title="{{ page_name }}" herf="/{{ page_name | downcase }}"> {{ page_name }} </a>
+	    </li>
+		{% end-for %}
 	    <li class="page-item page-item-1271"> 
 	     <a title="列表" herf="#">列表</a>
 	    </li>
