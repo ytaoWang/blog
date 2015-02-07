@@ -50,7 +50,7 @@
 	    </li>
 		{% end-for %}
 	    <li class="page-item page-item-1271"> 
-	     <a title="列表" herf="#">列表</a>
+	     <a title="列表" herf="/archive/">列表</a>
 	    </li>
 	     <li class="page-item page-item-1271">
 	      <a title="链接" href="#">链接</a>
@@ -72,7 +72,7 @@
         {{ content }}
       </div>
     </div>
-    <footer><center>&copy; power by wyt </center></footer>
+    <footer><center>&copy; {{ site.time | date: '%Y' }}. </center></footer>
     </div>
   </body>
 </html>
